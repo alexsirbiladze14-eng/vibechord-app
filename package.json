@@ -1,0 +1,38 @@
+{
+  "name": "vibechord",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "cap:sync": "cross-env CAPACITOR_BUILD=true next build && npx cap sync",
+    "cap:android": "cross-env CAPACITOR_BUILD=true next build && npx cap sync android && npx cap open android",
+    "cap:ios": "cross-env CAPACITOR_BUILD=true next build && npx cap sync ios && npx cap open ios"
+  },
+  "dependencies": {
+    "next": "14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tonal": "^6.2.0",
+    "tone": "^14.7.77",
+    "@supabase/supabase-js": "^2.45.4",
+    "@anthropic-ai/sdk": "^0.27.3",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/app": "^6.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "@types/node": "^20.14.15",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.40",
+    "tailwindcss": "^3.4.7",
+    "cross-env": "^7.0.3",
+    "@capacitor/cli": "^6.1.2",
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/ios": "^6.1.2"
+  }
+}

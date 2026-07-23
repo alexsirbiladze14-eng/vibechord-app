@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --focus-ring: #C98A4B;
+}
+
+* {
+  scrollbar-color: #3A362C #1B1712;
+}
+
+body {
+  background-color: #1B1712;
+  color: #EDE6D6;
+}
+
+/* Visible keyboard focus everywhere, per accessibility floor */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/*
+  Signature motif: a "string" divider whose thickness mimics real guitar
+  string gauges (thick low-E down to thin high-E). Used between major
+  sections instead of a generic hairline rule.
+  Usage: <div class="string string-1" /> ... <div class="string string-6" />
+  1 = thickest (low E), 6 = thinnest (high E)
+  Rounded ends + a fade at both edges so the set reads as tapering
+  strings rather than a stack of blunt bars.
+*/
+.string {
+  width: 100%;
+  background-color: #4A4534;
+  border: none;
+  border-radius: 999px;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 8%,
+    black 92%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 8%,
+    black 92%,
+    transparent 100%
+  );
+}
+.string-1 { height: 3.5px; }
+.string-2 { height: 3px; }
+.string-3 { height: 2.5px; }
+.string-4 { height: 2px; }
+.string-5 { height: 1.25px; }
+.string-6 { height: 0.75px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

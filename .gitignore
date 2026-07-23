@@ -1,0 +1,10 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+.DS_Store
+*.log
+# Note: android/ and ios/ folders are NOT ignored — Capacitor's convention
+# is to commit them, since they hold native project config you'll edit
+# directly (permissions, icons, build settings), not just generated output.
