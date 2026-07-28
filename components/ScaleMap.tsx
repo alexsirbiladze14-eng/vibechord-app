@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import type { FretPosition } from "@/lib/musicTheory";
 
 const STRINGS = [
@@ -20,6 +23,8 @@ const BOTTOM_LABEL_GAP = 22;
 const SINGLE_INLAYS = [3, 5, 7, 9];
 const DOUBLE_INLAY = 12;
 
+const NOTE_INTERVAL_MS = 320;
+
 function fretX(fret: number) {
   return NECK_LEFT + fret * FRET_WIDTH - FRET_WIDTH / 2;
 }
@@ -28,16 +33,88 @@ type Props = {
   positions: FretPosition[];
   rootNote: string;
   scaleLabel: string;
+  pentatonicNotes: string[]; // pitch classes in scale order, e.g. ["E","G","A","B","D"]
 };
 
-export default function ScaleMap({ positions, rootNote, scaleLabel }: Props) {
+export default function ScaleMap({
+  positions,
+  rootNote,
+  scaleLabel,
+  pentatonicNotes,
+}: Props) {
   const neckBottom = TOP + (STRINGS.length - 1) * ROW_HEIGHT;
+
+  const [isPlaying, setIsPlaying] = useState(false);
+  const toneRef = useRef<typeof import("tone") | null>(null);
+  const synthRef = useRef<import("tone").Synth | null>(null);
+  const timeoutsRef = useRef<number[]>([]);
+
+  function clearScheduled() {
+    timeoutsRef.current.forEach((id) => window.clearTimeout(id));
+    timeoutsRef.current = [];
+  }
+
+  async function ensureSynth() {
+    if (!toneRef.current) {
+      toneRef.current = await import("tone");
+    }
+    if (!synthRef.current) {
+      synthRef.current = new toneRef.current.Synth({
+        oscillator: { type: "triangle" },
+        envelope: { attack: 0.01, decay: 0.15, sustain: 0.25, release: 0.25 },
+      }).toDestination();
+    }
+    return { Tone: toneRef.current, synth: synthRef.current };
+  }
+
+  async function playScale() {
+    if (pentatonicNotes.length === 0) return;
+    const { Tone, synth } = await ensureSynth();
+    await Tone.start();
+
+    const sequence = [
+      ...pentatonicNotes.map((n) => `${n}3`),
+      `${pentatonicNotes[0]}4`,
+    ];
+
+    setIsPlaying(true);
+    sequence.forEach((note, i) => {
+      const id = window.setTimeout(() => {
+        synth.triggerAttackRelease(note, NOTE_INTERVAL_MS * 0.85 * 0.001);
+      }, i * NOTE_INTERVAL_MS);
+      timeoutsRef.current.push(id);
+    });
+    const stopId = window.setTimeout(() => {
+      setIsPlaying(false);
+    }, sequence.length * NOTE_INTERVAL_MS);
+    timeoutsRef.current.push(stopId);
+  }
+
+  function stopScale() {
+    clearScheduled();
+    synthRef.current?.triggerRelease();
+    setIsPlaying(false);
+  }
+
+  useEffect(() => {
+    return () => {
+      clearScheduled();
+      synthRef.current?.dispose();
+    };
+  }, []);
 
   return (
     <div>
-      <h2 className="font-display text-xl text-parchment mb-1">
-        {scaleLabel}
-      </h2>
+      <div className="mb-1 flex items-baseline justify-between">
+        <h2 className="font-display text-xl text-parchment">{scaleLabel}</h2>
+        <button
+          type="button"
+          onClick={isPlaying ? stopScale : playScale}
+          className="flex items-center gap-1.5 font-mono text-xs text-ash underline decoration-ash/40 underline-offset-4 hover:text-brass hover:decoration-brass"
+        >
+          {isPlaying ? "■ Stop" : "▶ Play scale"}
+        </button>
+      </div>
       <p className="text-sm text-ash mb-4">
         Brass dots mark the root note, {rootNote} — calculated across all
         12 frets on standard tuning.
@@ -49,7 +126,6 @@ export default function ScaleMap({ positions, rootNote, scaleLabel }: Props) {
           role="img"
           aria-label={`Guitar fretboard diagram showing ${scaleLabel}`}
         >
-          {/* fret wires */}
           {Array.from({ length: FRET_COUNT + 1 }).map((_, i) => (
             <line
               key={`fret-${i}`}
@@ -63,7 +139,6 @@ export default function ScaleMap({ positions, rootNote, scaleLabel }: Props) {
             />
           ))}
 
-          {/* inlay markers */}
           {SINGLE_INLAYS.map((fret) => (
             <circle
               key={`inlay-${fret}`}
@@ -73,11 +148,9 @@ export default function ScaleMap({ positions, rootNote, scaleLabel }: Props) {
               fill="#4A4534"
             />
           ))}
-          {/* standard double-dot at the 12th fret */}
           <circle cx={fretX(DOUBLE_INLAY)} cy={neckBottom + 8} r={3} fill="#4A4534" />
           <circle cx={fretX(DOUBLE_INLAY)} cy={neckBottom + 20} r={3} fill="#4A4534" />
 
-          {/* fret numbers, for orientation */}
           {[...SINGLE_INLAYS, DOUBLE_INLAY].map((fret) => (
             <text
               key={`num-${fret}`}
@@ -92,7 +165,6 @@ export default function ScaleMap({ positions, rootNote, scaleLabel }: Props) {
             </text>
           ))}
 
-          {/* strings, thickness = gauge, per the fretboard's own logic */}
           {STRINGS.map((s, i) => (
             <g key={s.label}>
               <line
@@ -119,7 +191,6 @@ export default function ScaleMap({ positions, rootNote, scaleLabel }: Props) {
             </g>
           ))}
 
-          {/* highlighted scale notes, computed live from musicTheory.ts */}
           {positions.map((pos, i) => (
             <circle
               key={i}

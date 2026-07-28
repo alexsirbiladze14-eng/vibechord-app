@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import { Fraunces, Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
@@ -23,26 +23,8 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Vibechord — turn a vibe into a song you can play",
-  description:
-    "Describe a mood, get back a real chord progression, scale map, and tabs you can actually play.",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "Vibechord",
-  },
-  icons: {
-    icon: "/favicon.png",
-    apple: "/icons/apple-touch-icon.png",
-  },
-};
-
-export const viewport: Viewport = {
-  themeColor: "#1B1712",
-  width: "device-width",
-  initialScale: 1,
-  viewportFit: "cover",
+  title: "Vibechord",
+  description: "Your AI songwriting and tone assistant.",
 };
 
 export default function RootLayout({
@@ -53,10 +35,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${fraunces.variable} ${inter.variable} ${plexMono.variable} font-body antialiased`}
+        className={`${fraunces.variable} ${inter.variable} ${plexMono.variable} bg-rosewood text-parchment h-screen w-screen overflow-hidden antialiased`}
       >
-        {children}
         <ServiceWorkerRegister />
+        {children}
       </body>
     </html>
   );

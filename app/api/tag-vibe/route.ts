@@ -1,14 +1,19 @@
 /**
  * /api/tag-vibe
  *
- * The ONLY place in this app that calls an AI model. Its job is narrow
- * and easy to verify: read the user's freeform vibe text, and classify
- * it into three fixed tags (genre, mood, energy) chosen from the exact
- * vocabulary in lib/progressions.ts.
+ * The ONLY place in this app that calls an AI model for vibe
+ * classification. Its job is narrow and easy to verify: read the
+ * user's freeform vibe text, and classify it into three fixed tags
+ * (genre, mood, energy) chosen from the exact vocabulary in
+ * lib/progressions.ts.
  *
  * It does NOT pick chords, write theory explanations, or touch the
  * fretboard — all of that stays in the deterministic code from Weeks
  * 2-3. This route's whole output is three short strings.
+ *
+ * Week 10: accepts an optional `byokKey` — if present, that key is
+ * used instead of your own ANTHROPIC_API_KEY, and this request skips
+ * rate limiting (it's spending the user's own quota, not yours).
  *
  * NOTE: this route needs a real Node server to run — it will NOT work
  * in the Capacitor/static-export build (see next.config.mjs / MOBILE.md).
@@ -18,12 +23,20 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { GENRES, MOODS, ENERGY_LEVELS } from "@/lib/progressions";
 import { sanitizeTags } from "@/lib/selectProgression";
+import {
+  resolveApiKey,
+  isUsingByok,
+  checkRateLimit,
+  getRateLimitKey,
+} from "@/lib/aiRouteHelpers";
 
 export async function POST(request: Request) {
   let vibe: string;
+  let byokKey: unknown;
   try {
     const body = await request.json();
     vibe = typeof body.vibe === "string" ? body.vibe.trim() : "";
+    byokKey = body.byokKey;
   } catch {
     return Response.json({ error: "Invalid request body." }, { status: 400 });
   }
@@ -35,7 +48,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const usingByok = isUsingByok(byokKey);
+  if (!checkRateLimit(getRateLimitKey(request), usingByok)) {
+    return Response.json(
+      { error: "Too many requests right now — wait a minute and try again." },
+      { status: 429 }
+    );
+  }
+
+  const apiKey = resolveApiKey(byokKey);
   if (!apiKey) {
     return Response.json(
       {
@@ -84,9 +105,13 @@ Output format (nothing else):
     const tags = sanitizeTags(parsed);
     return Response.json(tags);
   } catch (err) {
-    console.error("tag-vibe error:", err);
+    console.error("tag-vibe error:", err, usingByok ? "(byok)" : "(own key)");
     return Response.json(
-      { error: "Couldn't reach the AI service. Try again in a moment." },
+      {
+        error: usingByok
+          ? "Couldn't reach the AI service with your key — double check it's valid and has available credit."
+          : "Couldn't reach the AI service. Try again in a moment.",
+      },
       { status: 502 }
     );
   }

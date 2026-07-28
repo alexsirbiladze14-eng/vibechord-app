@@ -6,13 +6,86 @@ where AI handles taste and creativity, and deterministic code handles
 every piece of actual music math (so it never hallucinates a chord shape
 a human hand can't play).
 
-## Status: Week 1–9 complete
+## Status: Week 1–10 complete — the full original plan is built
 
-**Weeks 1–8** — full UI, real music theory engine, chord/tab
-dictionary with multiple voicings and skill levels, AI vibe
-interpreter, hum-a-riff pitch detection, chat-style iterative
-refinement, real Tone.js audio playback, and AI-personalized theory +
-quiz. See git history for the detailed week-by-week notes.
+**Weeks 1–9** — full UI, real music theory engine, chord/tab
+dictionary, AI vibe interpreter, hum-a-riff, chat-style refinement,
+real audio playback, AI-personalized theory + quiz, and accounts +
+saved songs + real billing via Lemon Squeezy.
+
+**Week 10** — the final week: BYOK, basic cost/abuse protection, and
+launch prep. See **LAUNCH.md** for the full end-to-end test checklist
+and the go-live steps only you can do (domain, switching Lemon Squeezy
+out of test mode).
+
+- **BYOK** (`ByokSettings.tsx`) — anyone can paste their own Anthropic
+  API key. It's stored ONLY in their browser (localStorage), never in
+  Supabase, and is sent only as a per-request field the AI routes hand
+  directly to Anthropic. While set, generating, refining, and the quiz
+  all use the user's own key and quota — Vibechord credits aren't
+  spent at all. Verified: the key-resolution logic correctly falls
+  back to your own key if the pasted value doesn't look like a real
+  Anthropic key, rather than silently failing.
+- **Rate limiting** (`lib/aiRouteHelpers.ts`) — caps requests against
+  YOUR OWN key at 20/minute per IP, protecting your API costs from a
+  runaway bug or bot. BYOK requests are exempt, since those spend the
+  user's own quota, not yours. Verified with a simulated burst of 25
+  rapid requests: exactly 20 allowed, 5 blocked, while 25 BYOK
+  requests in the same test were never limited.
+
+This completes the original 10-week plan in full: static UI → real
+music theory engine → chord/tab dictionary → AI vibe interpreter →
+hum-a-riff → iterative refinement → audio playback → AI theory/quiz →
+accounts and billing → BYOK and launch readiness.
+
+## Bonus: real plucked-string tone + genre-shaped effects
+
+Playback uses **Tone.PluckSynth** — a physically-modeled plucked
+string (Karplus-Strong synthesis), not a generic oscillator — so it
+actually sounds like a plucked string rather than a synth pad. Since
+`PluckSynth` is monophonic and can't be wrapped in Tone's `PolySynth`
+(confirmed against Tone.js's own GitHub issue #1074), chords are
+played by round-robining each note across a small pool of 8
+independent `PluckSynth` voices instead.
+
+`lib/soundPresets.ts` maps the genre already classified by
+`/api/tag-vibe` (Week 4 — this adds no new AI call) to that voice's
+real parameters — `attackNoise` (pick hardness), `dampening`
+(brightness), `resonance` (how long the string rings, deliberately
+LOW for metal/punk's palm-muted choke rather than high, matching how
+real palm-muting actually works) — plus a Tone.js effects chain on
+top: heavy Distortion for metal/punk, light Distortion + Tremolo for
+blues (classic amp tremolo), Chorus for indie (the jangly indie-guitar
+sound) and jazz-influenced, Chorus + a low-pass Filter for lo-fi
+(muffled tape feel), and clean Freeverb-only tones for pop/ballad/folk.
+Humming a riff (no AI classification exists there) and the
+pre-generation default both get Tone.PluckSynth's own natural,
+characterless defaults.
+
+Verified before shipping: every one of the 10 genres in
+`lib/progressions.ts`'s `GENRES` list has a matching preset entry, and
+every effect type referenced is one of the 6 implemented (Distortion,
+Chorus, Freeverb, Tremolo, FeedbackDelay, Filter) — checked with a
+small script rather than assumed. The current sound's label (e.g.
+"Distorted, palm-muted") is shown directly in the Listen panel, so the
+choice is visible, not hidden.
+
+## Bonus: generation respects your selected mode
+
+`selectProgression()` now takes the currently-selected mode as a
+preference: if a curated progression in THAT mode has any real overlap
+with the classified vibe tags, it wins and the mode dropdown stays put
+— it only auto-switches when nothing in the current mode matches the
+vibe even a little. Verified against the real progression database:
+a rock/playful/high-energy vibe now correctly stays in Mixolydian
+(previously it always switched to whichever mode scored globally
+best, ignoring the user's own selection). Honest limitation: Dorian
+and Mixolydian each have only one curated progression in the current
+13-entry database, so a vibe has to roughly match that specific
+entry's tags to stay in those modes — otherwise switching is still the
+right call, not a bug.
+"Distorted, palm-muted") is shown directly in the Listen panel, so the
+choice is visible, not hidden.
 
 **Week 9** — accounts, saved songs, and real billing. This is the
 first week that needs services beyond this codebase — a Supabase
@@ -45,12 +118,9 @@ See **BILLING.md** for the exact setup steps; everything else is built:
   stable per-event id the way Stripe did)
 
 Notably: **humming a riff still costs nothing** — it was never an AI
-call (see Week 5), so it was never gated behind credits either. Only
-the two genuinely AI-driven actions (vibe generation, refinement) and
-the AI quiz spend a credit.
-
-What's still ahead:
-- BYOK option, final polish, launch — Week 10
+call (see Week 5), so it was never gated behind credits either. Same
+now applies to anyone using their own BYOK key (Week 10) — those
+requests spend their quota, not yours or the shared credit pool.
 
 ## How to test Week 9
 

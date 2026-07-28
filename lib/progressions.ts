@@ -190,4 +190,44 @@ export const PROGRESSIONS: Progression[] = [
     explanation:
       "i–iv–VI–V in a minor key, built for palm-muted urgency rather than resolution.",
   },
+  {
+    name: "Dorian folk lift",
+    degrees: [0, 3, 4, 0],
+    requiredMode: "dorian",
+    genres: ["folk", "indie", "pop"],
+    moods: ["hopeful", "dreamy", "nostalgic"],
+    energy: "medium",
+    explanation:
+      "i–IV–v–i in Dorian — the natural major IV gives a folk-modal lift that plain minor doesn't have, without fully resolving to major.",
+  },
+  {
+    name: "Dorian moody groove",
+    degrees: [0, 6, 3],
+    requiredMode: "dorian",
+    genres: ["rock", "blues", "lo-fi"],
+    moods: ["dark", "dreamy", "tense"],
+    energy: "medium",
+    explanation:
+      "i–VII–IV in Dorian — a groove-based vamp closer to modal rock/funk than a resolving progression.",
+  },
+  {
+    name: "Mixolydian pop bounce",
+    degrees: [0, 3, 4, 0],
+    requiredMode: "mixolydian",
+    genres: ["pop", "folk", "indie"],
+    moods: ["hopeful", "playful", "nostalgic"],
+    energy: "medium",
+    explanation:
+      "I–IV–V–I in Mixolydian — the same sturdy folk shape as a major I–IV–V, but the flattened seventh keeps it from feeling fully resolved.",
+  },
+  {
+    name: "Mixolydian bluesy vamp",
+    degrees: [0, 6],
+    requiredMode: "mixolydian",
+    genres: ["blues", "rock", "jazz-influenced"],
+    moods: ["playful", "dreamy", "tense"],
+    energy: "low",
+    explanation:
+      "I–VII in Mixolydian — a laid-back two-chord vamp, the same flattened-seventh color that defines blues-rock riffing.",
+  },
 ];

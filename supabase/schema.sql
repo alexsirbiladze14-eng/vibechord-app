@@ -113,6 +113,41 @@ create policy "Users can delete their own saved songs"
   on saved_progressions for delete
   using (auth.uid() = user_id);
 
+-- ---------- conversations (Toney chat history) ----------
+-- Messages and artifacts are stored as JSONB blobs rather than separate
+-- normalized tables — they're always read/written together as one unit
+-- per conversation, so a single JSONB column avoids needless joins for
+-- data that's never queried piecemeal.
+
+create table if not exists conversations (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null default 'New chat',
+  messages jsonb not null default '[]'::jsonb,
+  artifacts jsonb not null default '[]'::jsonb,
+  active_artifact_index integer,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table conversations enable row level security;
+
+create policy "Users can view their own conversations"
+  on conversations for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert their own conversations"
+  on conversations for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can update their own conversations"
+  on conversations for update
+  using (auth.uid() = user_id);
+
+create policy "Users can delete their own conversations"
+  on conversations for delete
+  using (auth.uid() = user_id);
+
 -- ---------- stripe_events (webhook idempotency) ----------
 -- Despite the name (a leftover from an earlier Stripe integration),
 -- this table now serves as a generic "have I processed this webhook

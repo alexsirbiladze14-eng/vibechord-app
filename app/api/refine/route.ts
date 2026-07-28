@@ -10,12 +10,20 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { REFINEMENT_INTENTS } from "@/lib/refine";
+import {
+  resolveApiKey,
+  isUsingByok,
+  checkRateLimit,
+  getRateLimitKey,
+} from "@/lib/aiRouteHelpers";
 
 export async function POST(request: Request) {
   let text: string;
+  let byokKey: unknown;
   try {
     const body = await request.json();
     text = typeof body.request === "string" ? body.request.trim() : "";
+    byokKey = body.byokKey;
   } catch {
     return Response.json({ error: "Invalid request body." }, { status: 400 });
   }
@@ -27,7 +35,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const usingByok = isUsingByok(byokKey);
+  if (!checkRateLimit(getRateLimitKey(request), usingByok)) {
+    return Response.json(
+      { error: "Too many requests right now — wait a minute and try again." },
+      { status: 429 }
+    );
+  }
+
+  const apiKey = resolveApiKey(byokKey);
   if (!apiKey) {
     return Response.json(
       {
@@ -81,9 +97,13 @@ Output format (nothing else):
 
     return Response.json({ intent });
   } catch (err) {
-    console.error("refine error:", err);
+    console.error("refine error:", err, usingByok ? "(byok)" : "(own key)");
     return Response.json(
-      { error: "Couldn't reach the AI service. Try again in a moment." },
+      {
+        error: usingByok
+          ? "Couldn't reach the AI service with your key — double check it's valid and has available credit."
+          : "Couldn't reach the AI service. Try again in a moment.",
+      },
       { status: 502 }
     );
   }

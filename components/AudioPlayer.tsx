@@ -3,12 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import type { DiatonicChord, ModeName } from "@/lib/musicTheory";
 import { getChordToneNotes } from "@/lib/musicTheory";
+import type { Genre } from "@/lib/progressions";
+import { getSoundPreset } from "@/lib/soundPresets";
+import { useSynthVoice } from "@/lib/useSynthVoice";
 
 type Props = {
   chords: DiatonicChord[];
   degrees: number[]; // scale-degree indices matching `chords`, in order
   musicKey: string;
   mode: ModeName;
+  genre: Genre | null;
 };
 
 // Chord-tone pitch classes get a fixed octave for playback. This is a
@@ -16,38 +20,30 @@ type Props = {
 // genuine, audible, correct-note synthesis — not a placeholder.
 const PLAYBACK_OCTAVE = 4;
 
-export default function AudioPlayer({ chords, degrees, musicKey, mode }: Props) {
+export default function AudioPlayer({
+  chords,
+  degrees,
+  musicKey,
+  mode,
+  genre,
+}: Props) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [tempo, setTempo] = useState(90);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
-  // Tone.js touches the Web Audio API, which doesn't exist during
-  // server-side rendering — so it's only ever imported inside a click
-  // handler / effect, never at module load time.
-  const synthRef = useRef<import("tone").PolySynth | null>(null);
+  const preset = getSoundPreset(genre);
+  const presetKey = genre ?? "__default__";
+  const { ensure } = useSynthVoice();
   const timeoutsRef = useRef<number[]>([]);
-  const toneRef = useRef<typeof import("tone") | null>(null);
 
   function clearScheduled() {
     timeoutsRef.current.forEach((id) => window.clearTimeout(id));
     timeoutsRef.current = [];
   }
 
-  async function ensureSynth() {
-    if (!toneRef.current) {
-      toneRef.current = await import("tone");
-    }
-    if (!synthRef.current) {
-      synthRef.current = new toneRef.current.PolySynth(
-        toneRef.current.Synth
-      ).toDestination();
-    }
-    return { Tone: toneRef.current, synth: synthRef.current };
-  }
-
   async function play() {
     if (chords.length === 0) return;
-    const { Tone, synth } = await ensureSynth();
+    const { Tone, synth } = await ensure(preset, presetKey);
     await Tone.start(); // must happen from a real user gesture — this click qualifies
 
     setIsPlaying(true);
@@ -77,23 +73,18 @@ export default function AudioPlayer({ chords, degrees, musicKey, mode }: Props) 
 
   function stop() {
     clearScheduled();
-    synthRef.current?.releaseAll();
     setIsPlaying(false);
     setActiveIndex(null);
   }
 
-  // Stop cleanly if the component unmounts mid-playback, or if the
-  // progression genuinely changes. Deliberately keyed on a stable string
-  // (not the `chords` array reference) — that reference is rebuilt on
-  // every parent re-render (e.g. typing in the vibe box), which would
-  // otherwise cut playback off for reasons that have nothing to do with
-  // the actual chords changing.
+  // Stop cleanly if the progression genuinely changes. Deliberately
+  // keyed on a stable string (not the `chords` array reference) — that
+  // reference is rebuilt on every parent re-render (e.g. typing in the
+  // vibe box), which would otherwise cut playback off for reasons that
+  // have nothing to do with the actual chords changing.
   const progressionKey = `${musicKey}-${mode}-${chords.map((c) => c.name).join(",")}`;
   useEffect(() => {
-    return () => {
-      clearScheduled();
-      synthRef.current?.releaseAll();
-    };
+    return () => clearScheduled();
   }, []);
   useEffect(() => {
     stop();
@@ -107,10 +98,19 @@ export default function AudioPlayer({ chords, degrees, musicKey, mode }: Props) 
 
   return (
     <div className="rounded-lg border border-slate bg-rosewood/60 p-6">
-      <h2 className="font-display text-xl text-parchment mb-1">Listen</h2>
+      <div className="mb-1 flex items-baseline justify-between">
+        <h2 className="font-display text-xl text-parchment">Listen</h2>
+        {chords.length > 0 && (
+          <span className="font-mono text-[10px] uppercase tracking-wide text-brass">
+            {preset.label}
+          </span>
+        )}
+      </div>
       <p className="text-sm text-ash mb-4">
         {chords.length > 0
-          ? "Hear the real chord tones — synthesized from the same notes the tabs above use."
+          ? genre
+            ? `Tone shaped to match the "${genre}" vibe — real synth/effects choices, not AI-generated audio.`
+            : "Hear the real chord tones — synthesized from the same notes the tabs above use."
           : "Generate or hum a progression above to hear it played back."}
       </p>
 

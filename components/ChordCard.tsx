@@ -6,7 +6,7 @@ type Props = {
   keyLabel: string;
   modeLabel: string;
   progressionName: string | null;
-  source: "vibe" | "melody" | null;
+  source: "vibe" | "melody" | "refine" | "saved" | null;
   onReset: () => void;
 };
 
@@ -26,6 +26,10 @@ export default function ChordCard({
       ? `Chords picked to harmonize with the melody you hummed, in ${keyLabel} ${modeLabel}.`
       : source === "vibe"
       ? `A real, curated progression in ${keyLabel} ${modeLabel}, matched to what you described.`
+      : source === "refine"
+      ? `Refined from your previous progression, in ${keyLabel} ${modeLabel}.`
+      : source === "saved"
+      ? `Loaded from your saved songs, in ${keyLabel} ${modeLabel}.`
       : "Every chord that naturally belongs to this key, calculated from real interval math — not guessed.";
 
   return (

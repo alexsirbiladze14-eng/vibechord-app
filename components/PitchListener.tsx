@@ -13,7 +13,6 @@ const LISTEN_SECONDS = 8;
 export default function PitchListener({ onMelodyDetected }: Props) {
   const [isListening, setIsListening] = useState(false);
   const [currentNote, setCurrentNote] = useState<string | null>(null);
-  const [detectedNotes, setDetectedNotes] = useState<string[]>([]);
   const [micError, setMicError] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(LISTEN_SECONDS);
 
@@ -58,7 +57,6 @@ export default function PitchListener({ onMelodyDetected }: Props) {
       if (last !== noteStr) {
         const updated = [...notesRef.current, noteStr].slice(-MAX_NOTES);
         notesRef.current = updated;
-        setDetectedNotes(updated);
       }
     } else {
       setCurrentNote(null);
@@ -69,7 +67,6 @@ export default function PitchListener({ onMelodyDetected }: Props) {
 
   async function startListening() {
     setMicError(null);
-    setDetectedNotes([]);
     notesRef.current = [];
     setSecondsLeft(LISTEN_SECONDS);
 
@@ -96,14 +93,10 @@ export default function PitchListener({ onMelodyDetected }: Props) {
       setIsListening(true);
       rafRef.current = requestAnimationFrame(tick);
     } catch {
-      setMicError(
-        "Couldn't access your microphone. Check your browser's site permissions and try again."
-      );
+      setMicError("Mic error");
     }
   }
 
-  // Auto-stop after LISTEN_SECONDS so this can't run forever if the user
-  // forgets about it, and so the leftover mic indicator doesn't linger.
   useEffect(() => {
     if (!isListening) return;
     if (secondsLeft <= 0) {
@@ -115,8 +108,6 @@ export default function PitchListener({ onMelodyDetected }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isListening, secondsLeft]);
 
-  // Release the microphone if the component unmounts mid-recording —
-  // otherwise the browser's "mic is active" indicator stays on.
   useEffect(() => {
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -125,93 +116,64 @@ export default function PitchListener({ onMelodyDetected }: Props) {
   }, []);
 
   return (
-    <div className="rounded-lg border border-slate bg-rosewood/60 p-6">
-      <h2 className="font-display text-xl text-parchment mb-1">
-        Hum or play a riff
-      </h2>
-      <p className="text-sm text-ash mb-4">
-        Sing, hum, or play a short melody into your mic. We'll detect the
-        notes and suggest real diatonic chords underneath — no AI, just
-        pitch math matched against the key/mode above.
-      </p>
+    <div className="relative flex items-center justify-center">
+      <button
+        type="button"
+        onClick={isListening ? stopListening : startListening}
+        aria-pressed={isListening}
+        aria-label={isListening ? "Stop listening" : "Hum or play a melody"}
+        title={
+          isListening
+            ? `Listening (${secondsLeft}s left)`
+            : micError || "Hum or play a riff"
+        }
+        className={`flex h-10 w-10 items-center justify-center rounded-full transition-all ${
+          isListening
+            ? "bg-brass/20 text-brass ring-2 ring-brass animate-pulse"
+            : "text-brass hover:bg-slate/30"
+        }`}
+      >
+        {isListening ? (
+          /* Stop icon when active */
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="6" y="6" width="12" height="12" rx="2" />
+          </svg>
+        ) : (
+          /* Mic icon when idle */
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <rect x="9" y="2" width="6" height="12" rx="3" fill="currentColor" />
+            <path
+              d="M5 11a7 7 0 0014 0"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+            <line
+              x1="12"
+              y1="18"
+              x2="12"
+              y2="22"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+            <line
+              x1="8"
+              y1="22"
+              x2="16"
+              y2="22"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        )}
+      </button>
 
-      <div className="flex items-center gap-4">
-        <button
-          type="button"
-          onClick={isListening ? stopListening : startListening}
-          className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full transition-colors ${
-            isListening
-              ? "bg-rust text-parchment animate-pulse"
-              : "bg-brass text-rosewood hover:opacity-90"
-          }`}
-          aria-pressed={isListening}
-          aria-label={isListening ? "Stop listening" : "Start listening"}
-        >
-          {isListening ? (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <rect x="6" y="6" width="12" height="12" rx="2" />
-            </svg>
-          ) : (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <rect x="9" y="2" width="6" height="12" rx="3" fill="currentColor" />
-              <path
-                d="M5 11a7 7 0 0014 0"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-              <line
-                x1="12"
-                y1="18"
-                x2="12"
-                y2="22"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-              <line
-                x1="8"
-                y1="22"
-                x2="16"
-                y2="22"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-          )}
-        </button>
-
-        <div className="flex-1">
-          {isListening ? (
-            <p className="font-mono text-sm text-brass">
-              Listening… {secondsLeft}s left
-              {currentNote && (
-                <span className="ml-2 text-parchment">— {currentNote}</span>
-              )}
-            </p>
-          ) : (
-            <p className="font-mono text-sm text-ash">
-              {detectedNotes.length > 0
-                ? "Done — see the notes below."
-                : "Tap to start (auto-stops after 8 seconds)."}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {micError && <p className="mt-3 text-xs text-rust">{micError}</p>}
-
-      {detectedNotes.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {detectedNotes.map((note, i) => (
-            <span
-              key={i}
-              className="rounded-md bg-slate/40 px-2 py-1 font-mono text-xs text-parchment"
-            >
-              {note}
-            </span>
-          ))}
+      {/* Subtle feedback tooltip floating right above the mic icon while recording */}
+      {isListening && (
+        <div className="absolute bottom-12 left-0 whitespace-nowrap rounded-md border border-slate bg-rosewood px-2.5 py-1 text-[11px] font-mono text-parchment shadow-lg animate-in fade-in">
+          Listening… {secondsLeft}s {currentNote && <span className="text-brass">({currentNote})</span>}
         </div>
       )}
     </div>
