@@ -25,6 +25,7 @@ const SUBSCRIPTIONS = [
       "Interactive fretboard & audio playback",
       "Unlimited saved songs",
     ],
+    highlight: false,
   },
   {
     plan: "pro",
