@@ -31,27 +31,27 @@ export const PLAN_CONFIG: Record<PlanKey, PlanConfig> = {
   hobbyist: {
     variantEnvVar: "LEMONSQUEEZY_VARIANT_HOBBYIST",
     credits: 150,
-    label: "Hobbyist — $8/month",
+    label: "Hobbyist — GEL 14.99/month",
   },
   pro: {
     variantEnvVar: "LEMONSQUEEZY_VARIANT_PRO",
     credits: 500,
-    label: "Pro / Producer — $18/month",
+    label: "Pro / Producer — GEL 24.99/month",
   },
   pack_small: {
     variantEnvVar: "LEMONSQUEEZY_VARIANT_PACK_SMALL",
     credits: 50,
-    label: "Quick Jam Pack — $3",
+    label: "Quick Jam Pack — GEL 4.99",
   },
   pack_medium: {
     variantEnvVar: "LEMONSQUEEZY_VARIANT_PACK_MEDIUM",
     credits: 150,
-    label: "Songwriter Pack — $7",
+    label: "Songwriter Pack — GEL 7.99",
   },
   pack_large: {
     variantEnvVar: "LEMONSQUEEZY_VARIANT_PACK_LARGE",
     credits: 400,
-    label: "Producer Pack — $15",
+    label: "Producer Pack — GEL 14.99",
   },
 };
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { FREE_SAVED_SONGS_LIMIT } from "@/lib/subscription";
 
 export type SavedSong = {
   id: string;
@@ -23,9 +24,10 @@ type Props = {
   userId: string | null;
   currentSong: CurrentSong | null;
   onLoad: (song: SavedSong) => void;
+  isSubscriber: boolean;
 };
 
-export default function SavedSongs({ userId, currentSong, onLoad }: Props) {
+export default function SavedSongs({ userId, currentSong, onLoad, isSubscriber }: Props) {
   const [songs, setSongs] = useState<SavedSong[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,8 +55,16 @@ export default function SavedSongs({ userId, currentSong, onLoad }: Props) {
     };
   }, [userId]);
 
+  const atFreeLimit = !isSubscriber && songs.length >= FREE_SAVED_SONGS_LIMIT;
+
   async function handleSave() {
     if (!userId || !currentSong) return;
+    if (atFreeLimit) {
+      setError(
+        `Free accounts can save up to ${FREE_SAVED_SONGS_LIMIT} songs — upgrade to Premium for unlimited saves.`
+      );
+      return;
+    }
     setIsSaving(true);
     setError(null);
 
@@ -81,7 +91,8 @@ export default function SavedSongs({ userId, currentSong, onLoad }: Props) {
   }
 
   async function handleDelete(id: string) {
-    setSongs((prev) => prev.filter((s) => s.id !== id)); // optimistic
+    setSongs((prev) => prev.filter((s) => s.id !== id));
+    setError(null);
     const { error: deleteError } = await supabase
       .from("saved_progressions")
       .delete()
@@ -94,11 +105,18 @@ export default function SavedSongs({ userId, currentSong, onLoad }: Props) {
   return (
     <div className="rounded-lg border border-slate bg-rosewood/60 p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="font-mono text-xs text-ash">Your saved songs</p>
+        <p className="font-mono text-xs text-ash">
+          Your saved songs
+          {!isSubscriber && (
+            <span className="ml-1 text-ash/70">
+              ({songs.length}/{FREE_SAVED_SONGS_LIMIT})
+            </span>
+          )}
+        </p>
         <button
           type="button"
           onClick={handleSave}
-          disabled={!currentSong || isSaving}
+          disabled={!currentSong || isSaving || atFreeLimit}
           className="rounded-md bg-slate/60 px-3 py-1.5 text-xs text-parchment transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isSaving ? "Saving…" : "Save this song"}

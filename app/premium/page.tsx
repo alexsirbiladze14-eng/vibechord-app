@@ -10,23 +10,26 @@ type AuthUser = { id: string; email: string };
 
 // Plan keys match app/api/checkout/route.ts's PLAN_CONFIG exactly —
 // these aren't cosmetic labels, they're what tells the checkout route
-// which real Lemon Squeezy variant to use.
+// which real Lemon Squeezy variant to use. Prices shown here are the
+// ACTUAL prices set on those Lemon Squeezy products (in GEL, your
+// store's base currency) — kept in sync manually since Lemon Squeezy
+// is the real source of truth for what gets charged, not this file.
 const SUBSCRIPTIONS = [
   {
     plan: "hobbyist",
     label: "Hobbyist",
-    price: "$8",
+    price: "GEL 14.99",
     period: "/month",
     features: [
       "150 AI generations/month",
       "Interactive fretboard & audio playback",
-      "Save up to 50 songs",
+      "Unlimited saved songs",
     ],
   },
   {
     plan: "pro",
     label: "Pro / Producer",
-    price: "$18",
+    price: "GEL 24.99",
     period: "/month",
     features: [
       "500 AI generations/month",
@@ -39,9 +42,9 @@ const SUBSCRIPTIONS = [
 ] as const;
 
 const PACKS = [
-  { plan: "pack_small", label: "Quick Jam Pack", price: "$3", credits: "50 credits" },
-  { plan: "pack_medium", label: "Songwriter Pack", price: "$7", credits: "150 credits" },
-  { plan: "pack_large", label: "Producer Pack", price: "$15", credits: "400 credits" },
+  { plan: "pack_small", label: "Quick Jam Pack", price: "GEL 4.99", credits: "50 credits" },
+  { plan: "pack_medium", label: "Songwriter Pack", price: "GEL 7.99", credits: "150 credits" },
+  { plan: "pack_large", label: "Producer Pack", price: "GEL 14.99", credits: "400 credits" },
 ] as const;
 
 export default function PremiumPage() {

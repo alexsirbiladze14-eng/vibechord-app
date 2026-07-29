@@ -34,6 +34,67 @@ const MODE_QUALITIES: Record<ModeName, ChordQuality[]> = {
   mixolydian: ["major", "minor", "diminished", "major", "minor", "minor", "major"],
 };
 
+export const GUITAR_TUNINGS: Record<string, string[]> = {
+  "Standard": ["E", "A", "D", "G", "B", "E"],
+  "Drop D": ["D", "A", "D", "G", "B", "E"],
+  "Eb Standard": ["D#", "G#", "C#", "F#", "A#", "D#"],
+  "D Standard": ["D", "G", "C", "F", "A", "D"],
+  "Drop C": ["C", "G", "C", "F", "A", "D"],
+};
+
+export type TuningName = keyof typeof GUITAR_TUNINGS;
+
+const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+export type FretPosition = {
+  stringIndex: number; // 0 = high e (top row), 5 = low E (bottom row)
+  fret: number;
+  isRoot: boolean;
+  note: string; // pitch class at this exact position, e.g. "F#"
+};
+
+/**
+ * Given a set of scale/pentatonic notes and a root note, returns every
+ * fret position (up to maxFret) on a guitar tuned to `tuning` where one
+ * of those notes occurs. This is real fretboard math — not something an
+ * AI should ever be asked to guess at.
+ *
+ * `tuning` is expected low-to-high (e.g. GUITAR_TUNINGS["Standard"] =
+ * ["E","A","D","G","B","E"], matching how tunings are normally written
+ * and how they're stored in GUITAR_TUNINGS). Fretboard rendering uses
+ * the opposite order (stringIndex 0 = high e, 5 = low E), so the tuning
+ * array is reversed once here rather than needing every caller to
+ * remember to do it themselves.
+ */
+export function getFretPositions(
+  notes: string[],
+  rootNote: string,
+  tuning: string[] = GUITAR_TUNINGS["Standard"],
+  maxFret: number = 12
+): FretPosition[] {
+  const targetChromas = new Set(notes.map((n) => Note.chroma(n)));
+  const rootChroma = Note.chroma(rootNote);
+  const openStringChromas = [...tuning].reverse().map((n) => Note.chroma(n));
+
+  const positions: FretPosition[] = [];
+
+  openStringChromas.forEach((openChroma, stringIndex) => {
+    for (let fret = 0; fret <= maxFret; fret++) {
+      const chroma = (openChroma + fret) % 12;
+      if (targetChromas.has(chroma)) {
+        positions.push({
+          stringIndex,
+          fret,
+          isRoot: chroma === rootChroma,
+          note: NOTE_NAMES[chroma],
+        });
+      }
+    }
+  });
+
+  return positions;
+}
+
 /**
  * Which scale degree (0-6) is the diminished chord for a given mode.
  * This is NOT always the same index — it's degree 6 in Major, but
@@ -127,46 +188,4 @@ export function getChordToneNotes(
     scaleNotes[(degree + 2) % 7],
     scaleNotes[(degree + 4) % 7],
   ];
-}
-const OPEN_STRING_MIDI = [64, 59, 55, 50, 45, 40]; // e, B, G, D, A, E
-const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-
-export type FretPosition = {
-  stringIndex: number; // 0 = high e (top row), 5 = low E (bottom row)
-  fret: number;
-  isRoot: boolean;
-  note: string; // pitch class at this exact position, e.g. "F#"
-};
-
-/**
- * Given a set of scale/pentatonic notes and a root note, returns every
- * fret position (up to maxFret) on a standard-tuned guitar where one of
- * those notes occurs. This is real fretboard math — not something an AI
- * should ever be asked to guess at.
- */
-export function getFretPositions(
-  notes: string[],
-  rootNote: string,
-  maxFret: number = 12
-): FretPosition[] {
-  const targetChromas = new Set(notes.map((n) => Note.chroma(n)));
-  const rootChroma = Note.chroma(rootNote);
-
-  const positions: FretPosition[] = [];
-
-  OPEN_STRING_MIDI.forEach((openMidi, stringIndex) => {
-    for (let fret = 0; fret <= maxFret; fret++) {
-      const chroma = (openMidi + fret) % 12;
-      if (targetChromas.has(chroma)) {
-        positions.push({
-          stringIndex,
-          fret,
-          isRoot: chroma === rootChroma,
-          note: NOTE_NAMES[chroma],
-        });
-      }
-    }
-  });
-
-  return positions;
 }

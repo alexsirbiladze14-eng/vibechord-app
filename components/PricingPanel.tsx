@@ -7,15 +7,19 @@ type Props = {
   userEmail: string | null;
 };
 
+// Prices shown here are the ACTUAL prices set on the corresponding
+// Lemon Squeezy products (in GEL, your store's base currency) — kept
+// in sync manually since Lemon Squeezy is the real source of truth
+// for what gets charged, not this file.
 const SUBSCRIPTIONS = [
-  { plan: "hobbyist", label: "Hobbyist", price: "$8/mo", credits: "150 credits/mo" },
-  { plan: "pro", label: "Pro / Producer", price: "$18/mo", credits: "500 credits/mo" },
+  { plan: "hobbyist", label: "Hobbyist", price: "GEL 14.99/mo", credits: "150 credits/mo" },
+  { plan: "pro", label: "Pro / Producer", price: "GEL 24.99/mo", credits: "500 credits/mo" },
 ] as const;
 
 const PACKS = [
-  { plan: "pack_small", label: "Quick Jam", price: "$3", credits: "50 credits" },
-  { plan: "pack_medium", label: "Songwriter", price: "$7", credits: "150 credits" },
-  { plan: "pack_large", label: "Producer", price: "$15", credits: "400 credits" },
+  { plan: "pack_small", label: "Quick Jam", price: "GEL 4.99", credits: "50 credits" },
+  { plan: "pack_medium", label: "Songwriter", price: "GEL 7.99", credits: "150 credits" },
+  { plan: "pack_large", label: "Producer", price: "GEL 14.99", credits: "400 credits" },
 ] as const;
 
 export default function PricingPanel({ userId, userEmail }: Props) {

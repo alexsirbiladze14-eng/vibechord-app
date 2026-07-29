@@ -3,14 +3,17 @@
 import { useState } from "react";
 import type { Artifact } from "@/lib/artifacts";
 import { artifactTitle } from "@/lib/artifacts";
-import type { DiatonicChord, FretPosition, ModeName } from "@/lib/musicTheory";
+import type { DiatonicChord, FretPosition, ModeName, TuningName } from "@/lib/musicTheory";
 import type { SkillLevel } from "@/components/KeySelector";
 import ChordCard from "./ChordCard";
 import ScaleMap from "./ScaleMap";
 import TabViewer from "./TabViewer";
 import AudioPlayer from "./AudioPlayer";
 import TheoryPanel from "./TheoryPanel";
+import QuizWidget from "./QuizWidget";
 import { useSynthVoice } from "@/lib/useSynthVoice";
+import { Sparkles } from "lucide-react";
+import type { QuizQuestion } from "@/lib/quiz";
 
 type ProgressionView = {
   allChords: DiatonicChord[];
@@ -32,8 +35,12 @@ type Props = {
   onSelectIndex: (i: number) => void;
   skill: SkillLevel;
   byokKey: string;
-  onBeforeQuiz: () => Promise<{ ok: boolean; message?: string }>;
   progressionView: ProgressionView | null;
+  tuning?: TuningName;
+  setTuning?: (tuning: TuningName) => void;
+  quizQuestions: QuizQuestion[] | null;
+  onQuizRequest: () => void;
+  onQuizFinish: () => void;
 };
 
 function TonePreview({ artifact }: { artifact: Extract<Artifact, { kind: "tone" }> }) {
@@ -44,7 +51,7 @@ function TonePreview({ artifact }: { artifact: Extract<Artifact, { kind: "tone" 
     const { Tone, synth } = await ensure(artifact.preset, artifact.id);
     await Tone.start();
     setIsPlaying(true);
-    const notes = ["E3", "G3", "B3"]; // a neutral triad — this preview is about TONE, not a specific song's chords
+    const notes = ["E3", "G3", "B3"];
     synth.triggerAttackRelease(notes, 1.2);
     window.setTimeout(() => setIsPlaying(false), 1300);
   }
@@ -89,29 +96,45 @@ export default function ArtifactPanel({
   onSelectIndex,
   skill,
   byokKey,
-  onBeforeQuiz,
   progressionView,
+  tuning,
+  setTuning,
+  quizQuestions,
+  onQuizRequest,
+  onQuizFinish,
 }: Props) {
   const activeArtifact = activeIndex !== null ? artifacts[activeIndex] : null;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-rosewood">
       {artifacts.length > 0 && (
-        <div className="flex gap-1.5 overflow-x-auto border-b border-slate px-4 py-2.5 sm:px-6">
-          {artifacts.map((a, i) => (
+        <div className="flex items-center justify-between border-b border-slate px-4 py-2.5 sm:px-6 bg-rosewood/80">
+          <div className="flex gap-1.5 overflow-x-auto">
+            {artifacts.map((a, i) => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => onSelectIndex(i)}
+                className={`shrink-0 rounded-full px-3 py-1 font-mono text-[11px] transition-colors ${
+                  i === activeIndex
+                    ? "bg-brass text-rosewood"
+                    : "bg-slate/40 text-ash hover:text-parchment"
+                }`}
+              >
+                {artifactTitle(a)}
+              </button>
+            ))}
+          </div>
+
+          {activeArtifact?.kind === "progression" && !quizQuestions && (
             <button
-              key={a.id}
               type="button"
-              onClick={() => onSelectIndex(i)}
-              className={`shrink-0 rounded-full px-3 py-1 font-mono text-[11px] transition-colors ${
-                i === activeIndex
-                  ? "bg-brass text-rosewood"
-                  : "bg-slate/40 text-ash hover:text-parchment"
-              }`}
+              onClick={onQuizRequest}
+              className="flex items-center gap-2 rounded-lg bg-brass px-3.5 py-1.5 font-mono text-xs font-bold text-rosewood shadow-sm transition-transform hover:scale-105 shrink-0"
             >
-              {artifactTitle(a)}
+              <Sparkles size={14} /> Generate Quiz
             </button>
-          ))}
+          )}
         </div>
       )}
 
@@ -129,6 +152,9 @@ export default function ArtifactPanel({
 
         {activeArtifact?.kind === "progression" && progressionView && (
           <div className="space-y-8">
+            {quizQuestions && (
+              <QuizWidget questions={quizQuestions} onFinish={onQuizFinish} />
+            )}
             <ChordCard
               chords={progressionView.effectiveChords}
               allChords={progressionView.allChords}
