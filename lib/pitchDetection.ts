@@ -38,7 +38,7 @@ const NOTE_NAMES = [
  *  - a correlation-strength floor, so an unpitched/noisy signal (a pick
  *    scrape, a cough) doesn't get reported as a note
  */
-export function autoCorrelate(buffer: Float32Array, sampleRate: number): number {
+export function autoCorrelate(buffer: Float32Array<ArrayBuffer>, sampleRate: number): number {
   const size = buffer.length;
 
   let rms = 0;

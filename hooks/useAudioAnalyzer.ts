@@ -38,7 +38,7 @@ export function useAudioAnalyzer() {
 
   const tick = () => {
     if (!analyzerRef.current || !audioCtxRef.current) return;
-    const buffer = new Float32Array(analyzerRef.current.fftSize);
+    const buffer: Float32Array<ArrayBuffer> = new Float32Array(analyzerRef.current.fftSize);
     analyzerRef.current.getFloatTimeDomainData(buffer);
     
     // RMS Noise Gate: ignore background ambient room noise so notes don't flash randomly
@@ -71,8 +71,7 @@ export function useAudioAnalyzer() {
 
   return { pitch, isListening, startListening, stopListening };
 }
-
-function autoCorrelate(buffer: Float32Array, sampleRate: number) {
+function autoCorrelate(buffer: Float32Array<ArrayBuffer>, sampleRate: number) {
   let r1 = 0, r2 = buffer.length - 1, thres = 0.2;
   for (let i = 0; i < buffer.length / 2; i++) {
     if (Math.abs(buffer[i]) < thres) { r1 = i; break; }

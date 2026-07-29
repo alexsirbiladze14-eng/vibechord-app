@@ -19,7 +19,7 @@ export default function PitchListener({ onMelodyDetected }: Props) {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const bufferRef = useRef<Float32Array | null>(null);
+ const bufferRef = useRef<Float32Array<ArrayBuffer> | null>(null);
   const rafRef = useRef<number | null>(null);
   const listeningRef = useRef(false);
   const notesRef = useRef<string[]>([]);
