@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { apiUrl } from "@/lib/apiUrl";
 import { handleToneyIntent } from "@/lib/toneyClientRouter";
 import { getDiatonicChords, type ModeName } from "@/lib/musicTheory";
 import type { Artifact } from "@/lib/artifacts";
@@ -192,7 +193,7 @@ export function useToneyConversation() {
             }
           : null;
 
-      const res = await fetch("/api/toney", {
+      const res = await fetch(apiUrl("/api/toney"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

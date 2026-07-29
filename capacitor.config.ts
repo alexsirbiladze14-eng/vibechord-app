@@ -5,7 +5,8 @@ const config: CapacitorConfig = {
   appName: "Vibechord",
   webDir: "out",
   server: {
-    androidScheme: "https",
+    androidScheme: "http",
+    cleartext: true, 
   },
 };
 

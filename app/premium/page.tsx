@@ -5,15 +5,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Check } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { apiUrl } from "@/lib/apiUrl";
 
 type AuthUser = { id: string; email: string };
 
-// Plan keys match app/api/checkout/route.ts's PLAN_CONFIG exactly —
-// these aren't cosmetic labels, they're what tells the checkout route
-// which real Lemon Squeezy variant to use. Prices shown here are the
-// ACTUAL prices set on those Lemon Squeezy products (in GEL, your
-// store's base currency) — kept in sync manually since Lemon Squeezy
-// is the real source of truth for what gets charged, not this file.
 const SUBSCRIPTIONS = [
   {
     plan: "hobbyist",
@@ -69,7 +64,7 @@ export default function PremiumPage() {
     setLoadingPlan(plan);
     setError(null);
     try {
-      const res = await fetch("/api/checkout", {
+      const res = await fetch(apiUrl("/api/checkout"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan, userId: authUser.id, userEmail: authUser.email }),

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { apiUrl } from "@/lib/apiUrl";
 
 type Props = {
   userId: string | null;
@@ -35,7 +36,7 @@ export default function PricingPanel({ userId, userEmail }: Props) {
     setError(null);
 
     try {
-      const res = await fetch("/api/checkout", {
+      const res = await fetch(apiUrl("/api/checkout"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan, userId, userEmail }),
