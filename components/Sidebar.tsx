@@ -31,18 +31,31 @@ export default function Sidebar({
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          className="fixed inset-0 z-30 bg-black/50 backdrop-blur-[2px] md:hidden transition-opacity"
           onClick={onClose}
         />
       )}
 
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate bg-rosewood shadow-xl shrink-0 transition-transform duration-300 md:translate-x-0 ${
+        className={`fixed md:static inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate bg-rosewood shadow-xl shrink-0 transition-transform duration-300 ease-out md:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-center justify-center overflow-hidden border-b border-slate h-28 w-full px-4">
-          <div className="relative h-14 w-44">
+        {/*
+          FIX #7/#9: logo was small and did nothing when tapped. It's now
+          bigger and is a real "go home" shortcut — every app worth its
+          salt lets you tap the logo to bail out to the start screen.
+        */}
+        <Link
+          href="/chat"
+          onClick={() => {
+            onClose();
+            onNewSession();
+          }}
+          className="flex items-center justify-center overflow-hidden border-b border-slate h-32 w-full px-4 shrink-0 transition-opacity hover:opacity-80 active:opacity-60"
+          aria-label="Vibechord — start a new session"
+        >
+          <div className="relative h-16 w-52">
             <Image
               src="/logo.png"
               alt="Vibechord"
@@ -51,13 +64,13 @@ export default function Sidebar({
               priority
             />
           </div>
-        </div>
+        </Link>
 
         <div className="p-4 border-b border-slate/50 space-y-2">
           <Link
             href="/chat"
             onClick={onClose}
-            className="flex w-full items-center gap-2 rounded-md bg-brass px-4 py-2.5 text-sm font-medium text-rosewood transition-opacity hover:opacity-90 shadow-sm"
+            className="flex w-full items-center gap-2 rounded-md bg-brass px-4 py-2.5 text-sm font-medium text-rosewood transition-all hover:opacity-90 hover:scale-[1.02] active:scale-95 shadow-sm"
           >
             <MessageSquare size={16} />
             AI Chat Workspace
@@ -67,7 +80,7 @@ export default function Sidebar({
               onClose();
               onNewSession();
             }}
-            className="flex w-full items-center gap-2 rounded-md border border-slate bg-slate/20 px-4 py-2 text-xs font-medium text-ash transition-colors hover:text-parchment hover:bg-slate/40"
+            className="flex w-full items-center gap-2 rounded-md border border-slate bg-slate/20 px-4 py-2 text-xs font-medium text-ash transition-all hover:text-parchment hover:bg-slate/40 active:scale-95"
           >
             <Plus size={14} />
             New Chat Session
@@ -110,10 +123,10 @@ export default function Sidebar({
           <Link
             href="/tuner"
             onClick={onClose}
-            className="group flex w-full items-center justify-between rounded-xl border border-slate bg-rosewood p-3 transition-all hover:border-brass/50 hover:shadow-[0_0_15px_rgba(234,179,8,0.1)]"
+            className="group flex w-full items-center justify-between rounded-xl border border-slate bg-rosewood p-3 transition-all hover:border-brass/50 hover:shadow-[0_0_15px_rgba(201,138,75,0.15)]"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1A1A1A] border border-slate group-hover:bg-brass/10 group-hover:text-brass transition-colors text-ash">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate/20 border border-slate group-hover:bg-brass/10 group-hover:text-brass transition-colors text-ash">
                 <Radio size={16} />
               </div>
               <div className="flex flex-col text-left">
@@ -121,7 +134,7 @@ export default function Sidebar({
                 <span className="text-[10px] font-mono text-ash tracking-widest">WEB AUDIO</span>
               </div>
             </div>
-            <span className="text-ash group-hover:text-brass transition-colors">→</span>
+            <span className="text-ash group-hover:text-brass group-hover:translate-x-0.5 transition-all">→</span>
           </Link>
 
           <div className="h-px w-full bg-slate/50 my-1"></div>
